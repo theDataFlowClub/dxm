@@ -4,20 +4,19 @@ import (
 	"fmt"
 
 	// Importamos el paquete de configuración
-	cfg "github.com/devicemxl/dxm/internal/dataDownloader/config"
 
 	db "go.etcd.io/bbolt"
 )
 
 func initDB(class string) (*db.DB, error) {
 	// Declara 'cfg' en el ámbito de la función initDB
-	var cfg cfg.DBOptions
+	var cfg DBOptions
 	//
 	// Asigna el valor a 'cfg' basado en el parámetro 'class'
 	if class == "write" {
-		cfg = cfg.writeConfig // Asignación, no declaración aquí
+		cfg = writeConfig // Asignación, no declaración aquí
 	} else if class == "read" { // Es buena idea ser explícito con "read"
-		cfg = cfg.readConfig // Asignación, no declaración aquí
+		cfg = readConfig // Asignación, no declaración aquí
 	} else {
 		// Manejo de error si 'class' no es ni "write" ni "read"
 		return nil, fmt.Errorf("clase de base de datos no válida: %s. Debe ser 'write' o 'read'", class)
