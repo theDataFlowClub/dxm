@@ -1,0 +1,40 @@
+{
+    "alpacaQuotes": {
+        "ap":{
+            "name": "Ask Price (Precio de Venta)",
+            "long": "Este es el precio más bajo al que un vendedor está dispuesto a vender una acción o activo en ese momento. Es el precio que pagarías si quieres comprar inmediatamente."
+        },
+        "as":{
+            "name": "Ask Size (Tamaño de Venta)",
+            "long": "Es la cantidad (número de acciones o contratos) que está disponible para la venta en el precio ap. Por ejemplo, si as es 6, significa que hay 6 acciones (o lotes de 100 acciones) disponibles a ese precio."
+        },
+        "ax":{
+            "name": "Ask Exchange (Bolsa de Venta).",
+            "long": "Indica la bolsa de valores o el centro de negociación donde se publicó el precio ap y as. 'T' generalmente se refiere a NASDAQ. Otras bolsas comunes tienen sus propias abreviaturas (e.g., 'N' para NYSE, 'A' para NYSE American, 'P' para Arca)."
+        },
+        "bp":{
+            "name": "Bid Price (Precio de Compra)",
+            "long": ""
+        },
+        "bs":{
+            "name": "Bid Size (Tamaño de Compra)",
+            "long": ""
+        },
+        "bx":{
+            "name": "Bid Exchange (Bolsa de Compra).",
+            "long": ""
+        },
+        "c":{
+            "name": "Conditions (Condiciones de la Operación).",
+            "long": "Son muy específicos de la bolsa y del tipo de dato."
+        },
+        "symbol":{
+            "name": "ticker",
+            "long": "symbolo de una compania/serie"
+        },
+        "z":{
+            "name": "Tape (Cinta).",
+            "long": "Se refiere a la 'cinta' de reportes de transacciones donde se publicó esta cotización. En el mercado de valores de EE. UU., hay tres 'cintas' principales:\nA (NYSE): Para valores que cotizan en la Bolsa de Nueva York.;\nB (NYSE American/Regional): Para valores que cotizan en NYSE American y otras ;\nC (NASDAQ): Para valores que cotizan en NASDAQ."
+        }
+    }
+}
