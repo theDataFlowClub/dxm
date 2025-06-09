@@ -1,4 +1,4 @@
-package dataDownloader
+package main
 
 type Quote struct {
 	// defining struct variables
