@@ -22,4 +22,4 @@ type oneQuote struct {
 }
 
 // defining a struct instance
-var thisQuote Quote
+var THIS_QUOTE Quote

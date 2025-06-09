@@ -14,7 +14,7 @@ var symbol = "QQQ"
 var domain = "data.alpaca.markets"
 var path = "/v2/stocks/" + symbol + "/quotes"
 var query = "start=2016-01-01T00%3A00%3A00Z&limit=2&feed=sip&sort=asc"
-var fAddress = dw.WebQuery(dw.WebQueryAddress{domain: domain, path: path, query: query})
+var fAddress = dw.WebQuery(dw.WebQueryAddress{DOMAIN: domain, PATH: path, QUERY: query})
 
 func main() {
 	// 1. Initialize log process early
@@ -25,17 +25,17 @@ func main() {
 	// Using config.cfgAlpacaConnect assuming it's in your config package
 	res, _ := dw.AlpacaCallItWithRetries(
 		dw.AlpacaCallItOptions{
-			url:            fAddress,              //	url string,
-			MaxRetries:     3,                     //	maxRetries int,
-			maxBackoff:     2 * time.Second,       //	maxBackoff time.Duration,
-			initialBackoff: 50 * time.Millisecond, //	initialBackoff time.Duration,
-			logText:        "Descarga de Alpaca",  //	logText string
+			URL:             fAddress,              //	url string,
+			MAX_RETRIES:     3,                     //	maxRetries int,
+			MAX_BACKOFF:     2 * time.Second,       //	maxBackoff time.Duration,
+			INITIAL_BACKOFF: 50 * time.Millisecond, //	initialBackoff time.Duration,
+			LOG_TEXT:        "Descarga de Alpaca",  //	logText string
 		})
 
 	// 3. Decode the Alpaca response into thisQuote
 	// This populates thisQuote.Symbol, which is needed later
-	dw.UnmarshalGeneric([]byte(res), &thisQuote)
-	log.Println("Alpaca data downloaded for symbol: %s", dw.thisQuote.Symbol)
+	dw.UnmarshalGeneric([]byte(res), &THIS_QUOTE)
+	log.Println("Alpaca data downloaded for symbol: %s", dw.THIS_QUOTE.Symbol)
 
 	// 4. Initialize DB with retries
 	// Use config.writeConfig for DB options
@@ -43,7 +43,7 @@ func main() {
 	var dbInstance *db.DB // Declare a local variable for the DB instance
 
 	// Call initDBWithRetries and assign its result to dbInstance
-	dbInstance, err = dw.InitDBWithRetries(writeConfig)
+	dbInstance, err = dw.InitDBWithRetries(dw.WriteConfig)
 	if err != nil {
 		log.Fatalf("Fatal: Failed to initialize database: %v", err)
 	}
@@ -70,26 +70,26 @@ func main() {
 	// modify the existing one.
 	bucket, err := dw.InitBucketWithRetries(
 		dw.BkOptions{
-			dbInstance: thisDB,
-			bucketName: dw.thisQuote.Symbol, // Se asume que 'thisQuote' es accesible y tiene un campo 'Symbol'
-			alpacaQuoteBuketSlots: dw.AlpacaQuoteBuketSlots{
-				ap: "",
-				as: "",
-				ax: "",
-				bp: "",
-				bs: "",
-				bx: "",
-				c:  "",
-				z:  "",
-				t:  "",
+			DB_INSTANCE: thisDB,
+			BUCKET_NAME: dw.THIS_QUOTE.Symbol, // Se asume que 'thisQuote' es accesible y tiene un campo 'Symbol'
+			ALPACA_QUOTE_BUCKET_SLOTS: dw.AlpacaQuoteBuketSlots{
+				AP: "",
+				AS: "",
+				AX: "",
+				BP: "",
+				BS: "",
+				BX: "",
+				C:  "",
+				Z:  "",
+				T:  "",
 			},
 		}) // Pass the local config
 	if err != nil {
 		log.Fatalf("Fatal: Failed to initialize symbol bucket: %v", err)
 	}
-	log.Printf("Bucket '%s' initialized successfully. Bucket pointer: %v", dw.thisQuote.Symbol, bucket)
+	log.Printf("Bucket '%s' initialized successfully. Bucket pointer: %v", dw.THIS_QUOTE.Symbol, bucket)
 	//
-	for i, q := range dw.thisQuote.Quotes {
+	for i, q := range dw.THIS_QUOTE.Quotes {
 		fmt.Printf("--- Quote %d ---\n", i+1)
 		fmt.Printf("  AP: %f, AS: %d, AX: %s\n", q.AP, q.AS, q.AX)
 		fmt.Printf("  BP: %f, BS: %d, BX: %s\n", q.BP, q.BS, q.BX)

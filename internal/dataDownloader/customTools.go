@@ -48,10 +48,10 @@ func HandleErrorLogIt(err error, message string) {
 
 // WebQueryAddress representa los componentes de una dirección web que será construida dinámicamente.
 type WebQueryAddress struct {
-	protocol string // Protocolo (http o https); si está vacío, se usa "https" por defecto
-	domain   string // Dominio principal (ej. "example.com")
-	path     string // Ruta del recurso (ej. "/api/data")
-	query    string // Cadena de consulta (ej. "param1=value1&param2=value2")
+	PROTOCOL string // Protocolo (http o https); si está vacío, se usa "https" por defecto
+	DOMAIN   string // Dominio principal (ej. "example.com")
+	PATH     string // Ruta del recurso (ej. "/api/data")
+	QUERY    string // Cadena de consulta (ej. "param1=value1&param2=value2")
 }
 
 // webQuery construye una URL completa a partir de los campos del struct WebQueryAddress.
@@ -67,23 +67,23 @@ type WebQueryAddress struct {
 //	https://example.com/api/data?key1=value1&key2=value2
 func WebQuery(data WebQueryAddress) string {
 	// Establecer "https" como protocolo por defecto si no se especifica
-	if data.protocol == "" {
-		data.protocol = "https"
+	if data.PROTOCOL == "" {
+		data.PROTOCOL = "https"
 	}
 
 	// Crear objeto URL con esquema, dominio y ruta
 	u := url.URL{
-		Scheme: data.protocol,
-		Host:   data.domain,
-		Path:   data.path,
+		Scheme: data.PROTOCOL,
+		Host:   data.DOMAIN,
+		Path:   data.PATH,
 	}
 
 	// Intentar parsear la cadena de consulta
-	queryParams, err := url.ParseQuery(data.query)
+	queryParams, err := url.ParseQuery(data.QUERY)
 	if err != nil {
 		// Si falla el parseo, mostrar advertencia en log y usar la query en crudo
 		log.Printf("Error parsing query string: %v", err)
-		u.RawQuery = data.query
+		u.RawQuery = data.QUERY
 	} else {
 		// Si el parseo es exitoso, se codifican correctamente los parámetros
 		u.RawQuery = queryParams.Encode()

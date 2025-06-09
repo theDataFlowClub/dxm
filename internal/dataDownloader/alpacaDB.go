@@ -26,7 +26,7 @@ BLOQUE DE initDB
 type DBOptions struct {
 	// Path es la ruta completa al archivo de la base de datos bbolt en el sistema de archivos.
 	// Ejemplos: "db/ticks.db", "/var/lib/mybot/data.db".
-	Path string
+	PATH string
 
 	// FileMode son los permisos del sistema de archivos que se aplicarán si la base de datos
 	// se crea por primera vez. Se representa utilizando los permisos de archivo de Unix.
@@ -35,13 +35,13 @@ type DBOptions struct {
 	//           nadie más tiene acceso.
 	//   - 0644: El propietario tiene lectura y escritura; el grupo y otros solo tienen lectura.
 	// Es de tipo os.FileMode, que es un alias para uint32, y requiere la importación del paquete "os".
-	FileMode os.FileMode
+	FILE_MODE os.FileMode
 
 	// BoltOpts es un puntero a una instancia de 'bbolt.Options'.
 	// Contiene opciones avanzadas y específicas para la apertura de la base de datos bbolt,
 	// como el Timeout para bloquear el archivo de la DB y si la base de datos se abrirá
 	// en modo de solo lectura (ReadOnly).
-	BoltOpts *db.Options
+	BOLT_OPTS *db.Options
 }
 
 // writeConfig es una instancia predefinida de `DBOptions` configurada para abrir
@@ -56,9 +56,9 @@ type DBOptions struct {
 //     exclusivo sobre el archivo de la base de datos.
 //   - ReadOnly: false - Indica que la base de datos se abrirá en modo de lectura y escritura.
 var WriteConfig = DBOptions{
-	Path:     "db/ticks.db",
-	FileMode: 0600,
-	BoltOpts: &db.Options{
+	PATH:      "db/ticks.db",
+	FILE_MODE: 0600,
+	BOLT_OPTS: &db.Options{
 		Timeout:  500 * time.Millisecond,
 		ReadOnly: false,
 	},
@@ -66,10 +66,10 @@ var WriteConfig = DBOptions{
 
 // Configuración para operaciones de lectura (solo lectura)
 var ReadConfig = DBOptions{
-	Path: "db/ticks.db",
+	PATH: "db/ticks.db",
 	// Los permisos de creación solo importan si el archivo no existe
-	FileMode: 0400, // Owner has read access only. Group and others have no access.
-	BoltOpts: &db.Options{
+	FILE_MODE: 0400, // Owner has read access only. Group and others have no access.
+	BOLT_OPTS: &db.Options{
 		Timeout:  500 * time.Millisecond,
 		ReadOnly: true, // ¡Importante para solo lectura!
 	},
@@ -93,19 +93,19 @@ func InitDB(cfg DBOptions) (*db.DB, error) {
 	// Declara 'cfg' en el ámbito de la función initDB
 	//var cfg DBOptions
 	//
-	switch cfg.FileMode {
+	switch cfg.FILE_MODE {
 	case 0600:
 		cfg = WriteConfig
 	case 0400:
 		cfg = ReadConfig
 	default:
 		// Manejo de error si 'FileMode' no es ni 0600 ni 0400
-		return nil, fmt.Errorf("error de seguridad: %v. Modo no valido", cfg.FileMode)
+		return nil, fmt.Errorf("error de seguridad: %v. Modo no valido", cfg.FILE_MODE)
 	}
 	//
 	// Abrimos db con el archivo de configuración elegido
 	// 'cfg' ahora es accesible aquí
-	database, err := db.Open(cfg.Path, cfg.FileMode, cfg.BoltOpts)
+	database, err := db.Open(cfg.PATH, cfg.FILE_MODE, cfg.BOLT_OPTS)
 	if err != nil {
 		//
 		// NO HACER DESTRUYE LA DB Y FALLA EL PUNTERO
@@ -187,15 +187,15 @@ BLOQUE DE initBucket
 // alpacaCallItOptions contiene las opciones de configuración para un
 // quote optenido de alpaca
 type AlpacaQuoteBuketSlots struct {
-	ap string
-	as string
-	ax string
-	bp string
-	bs string
-	bx string
-	c  string
-	z  string
-	t  string
+	AP string
+	AS string
+	AX string
+	BP string
+	BS string
+	BX string
+	C  string
+	Z  string
+	T  string
 }
 
 // bkOptions es una estructura que agrupa los parámetros necesarios para
@@ -205,12 +205,12 @@ type AlpacaQuoteBuketSlots struct {
 type BkOptions struct {
 	// dbInstance es un puntero a la instancia de la base de datos bbolt
 	// a la que pertenece el bucket.
-	dbInstance *db.DB
+	DB_INSTANCE *db.DB
 	// bucketName es el nombre del bucket dentro de la base de datos,
 	// representado como uSna cadena.
-	bucketName string
+	BUCKET_NAME string
 	//
-	alpacaQuoteBuketSlots AlpacaQuoteBuketSlots
+	ALPACA_QUOTE_BUCKET_SLOTS AlpacaQuoteBuketSlots
 }
 
 // initBucket obtiene o crea un bucket dentro de una base de datos bbolt.
@@ -251,11 +251,11 @@ func InitBucket(opt BkOptions) (*db.Bucket, error) {
 
 	// db.Update ejecuta una transacción de lectura/escritura.
 	// La función pasada como argumento recibe un *db.Tx (transacción).
-	err := opt.dbInstance.Update(func(tx *db.Tx) error {
+	err := opt.DB_INSTANCE.Update(func(tx *db.Tx) error {
 		var txErr error // Variable local para capturar el error de la creación del bucket
 		// CreateBucketIfNotExists intenta obtener el bucket por su nombre.
 		// Si no existe, lo crea. Retorna el bucket o un error.
-		bucket, txErr = tx.CreateBucketIfNotExists([]byte(opt.bucketName))
+		bucket, txErr = tx.CreateBucketIfNotExists([]byte(opt.BUCKET_NAME))
 		return txErr // Retorna el error de la transacción al manejador de db.Update
 	})
 
