@@ -1,5 +1,6 @@
 package main
 
+// Import necessary packages for data processing and database operations
 import (
 	"encoding/binary"
 	"fmt"
