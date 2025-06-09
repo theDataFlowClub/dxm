@@ -1,4 +1,4 @@
-package main
+package dataDownloader
 
 import (
 	"fmt"
@@ -8,68 +8,145 @@ import (
 	"time"
 )
 
-// --- Función que basica de llamada a Alpaca ---
+/*
+//
+//
+//
+
+BLOQUE DE alpacaCallItWithRetries
+// ===============================
+
+//
+//
+//
+*/
+// alpacaCallItOptions contiene las opciones de configuración para una llamada con reintentos a la API de Alpaca.
+type alpacaCallItOptions struct {
+	url            string        // URL completa con parámetros para la petición
+	MaxRetries     int           // Número máximo de reintentos permitidos
+	maxBackoff     time.Duration // Tiempo máximo de espera entre reintentos
+	initialBackoff time.Duration // Tiempo inicial de espera entre reintentos
+	logText        string        // Texto a usar para logging de esta acción
+}
+
+// callIt realiza una petición HTTP GET simple a la URL indicada, incluyendo
+// los encabezados de autenticación requeridos por la API de Alpaca.
+//
+// Esta función es la capa base para las comunicaciones con la API de Alpaca.
+// No incorpora lógica de reintentos; se espera que las funciones de nivel superior
+// (como `alpacaCallItWithRetries`) manejen los reintentos y el retroceso exponencial
+// en caso de fallos transitorios.
+//
+// Parámetros:
+//   - url: La URL completa del endpoint de la API de Alpaca al que se desea llamar
+//     (ej., "[https://data.alpaca.markets/v2/stocks/AAPL/quotes](https://data.alpaca.markets/v2/stocks/AAPL/quotes)").
+//
+// Devuelve:
+//   - Una cadena (string) que contiene el cuerpo de la respuesta HTTP si la petición
+//     es exitosa (normalmente un JSON).
+//   - Un error si ocurre algún problema durante la creación de la petición,
+//     la carga de la configuración, la ejecución de la petición HTTP, o la lectura
+//     del cuerpo de la respuesta.
+//
+// Errores comunes que puede retornar:
+//   - Si falla la carga de la configuración (terminará el programa con log.Fatalf).
+//   - Si ocurre un error de red o de conexión durante la petición HTTP.
+//   - Si hay un problema al leer el cuerpo de la respuesta HTTP.
+//
+// Nota: La autenticación se realiza añadiendo los encabezados "APCA-API-KEY-ID"
+// y "APCA-API-SECRET-KEY" con los valores obtenidos de la configuración de la aplicación.
 func callIt(url string) (string, error) {
 
+	// Crea una nueva petición HTTP GET. El tercer argumento (nil) es para el cuerpo de la petición.
+	// El error devuelto por http.NewRequest se ignora aquí, asumiendo que la URL es válida.
 	req, _ := http.NewRequest("GET", url, nil)
 
+	// Carga la configuración de la aplicación para obtener las claves de la API.
+	// Si hay un error al cargar la configuración, el programa termina aquí.
 	appConfig, err := loadConfigs()
 	if err != nil {
 		log.Fatalf("Error al cargar configuración: %v", err)
 	}
 
-	req.Header.Add("accept", "application/json")
-	req.Header.Add("APCA-API-KEY-ID", appConfig.AlpacaAPIKey)
-	req.Header.Add("APCA-API-SECRET-KEY", appConfig.AlpacaSecretKey)
+	// Agrega los encabezados HTTP necesarios para la autenticación y el formato de respuesta.
+	req.Header.Add("accept", "application/json")                     // Solicita una respuesta en formato JSON
+	req.Header.Add("APCA-API-KEY-ID", appConfig.AlpacaAPIKey)        // Agrega la clave de API
+	req.Header.Add("APCA-API-SECRET-KEY", appConfig.AlpacaSecretKey) // Agrega la clave secreta
 
+	// Ejecuta la petición HTTP utilizando el cliente HTTP por defecto de Go.
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
+		// Si ocurre un error durante la petición (ej. problema de red), se devuelve un error.
 		return "", fmt.Errorf("error making HTTP request: %v", err)
 	}
+	// Asegura que el cuerpo de la respuesta se cierre después de que la función termine,
+	// para liberar recursos de red.
 	defer res.Body.Close()
+
+	// Lee todo el contenido del cuerpo de la respuesta HTTP.
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
+		// Si hay un error al leer el cuerpo de la respuesta, se devuelve un error.
+		// Se utiliza %w para envolver el error original.
 		return "", fmt.Errorf("error reading response body: %w", err)
 	}
 
+	// Convierte el cuerpo de la respuesta (que es un slice de bytes) a una cadena y lo devuelve.
 	return string(body), nil
-
 }
 
-// --- Función que orquesta la llamada a Alpaca y el parsing ---
-type alpacaCallItOptions struct {
-	url            string
-	MaxRetries     int
-	maxBackoff     time.Duration
-	initialBackoff time.Duration
-	logText        string // Para logging, si quieres que la acción específica sea visible
-	// Otros parámetros específicos de la API de Alpaca, si se vuelven fijos
-	// StartTime string // Si no lo pasas dinámicamente en la URL
-	// Limit int
-}
-
+// alpacaCallItWithRetries orquesta una llamada a la API de Alpaca con estrategia de reintentos y backoff exponencial.
+//
+// Esta función es útil para asegurar que las llamadas HTTP hacia servicios externos como Alpaca se realicen
+// de forma resiliente, manejando errores transitorios como:
+// - Fallos de red intermitentes
+// - Respuestas 5xx del servidor
+// - Limitaciones de tasa (rate limiting, ej. 429 Too Many Requests)
+//
+// Parámetros:
+//   - opt: una estructura de tipo `alpacaCallItOptions` que contiene:
+//   - opt.url: URL que se debe consultar (string)
+//   - opt.MaxRetries: cantidad máxima de intentos antes de rendirse
+//   - opt.initialBackoff: duración del primer intervalo de espera
+//   - opt.maxBackoff: duración máxima entre reintentos
+//   - opt.logText: nombre descriptivo de la acción para logging
+//
+// La función envuelve la llamada base `callIt(url string) (string, error)` dentro del mecanismo
+// de reintentos definido por `executeActionWithRetries`. Captura y maneja errores, y asegura
+// que el resultado final sea una cadena válida.
+//
+// Devuelve:
+//   - (string, nil) en caso de éxito
+//   - ("", error) si se agotan los reintentos o el resultado no es del tipo esperado
 func alpacaCallItWithRetries(opt alpacaCallItOptions) (string, error) {
-	// Paso 1: Hacer la llamada a Alpaca con reintentos
+	// Paso 1: Ejecutar la llamada con reintentos
 	rawResponse, err := executeActionWithRetries(
-		func(attempt int) (interface{}, error) { // ActionFunc que devuelve (string, error)
+		func(attempt int) (interface{}, error) {
+			// Lógica real de la llamada
 			res, callErr := callIt(opt.url)
-			return res, callErr // Devolvemos el string y el error
+			return res, callErr
 		},
-		func(err error, msg string) { handleErrorLogIt(err, msg) },
-		opt.MaxRetries,     // maxRetries
-		opt.initialBackoff, // initialBackoff
-		opt.maxBackoff,     //2*time.Second,        // maxBackoff
-		opt.logText,        // Nombre de la acción para el log
+		func(err error, msg string) {
+			// Manejador de errores con logging
+			handleErrorLogIt(err, msg)
+		},
+		opt.MaxRetries,
+		opt.initialBackoff,
+		opt.maxBackoff,
+		opt.logText,
 	)
+
+	// Paso 2: Si todos los reintentos fallan, devolver error final
 	if err != nil {
-		// El error definitivo ya incluye el mensaje de "fallo definitivo"
 		return "", fmt.Errorf("fallo definitivo en la descarga de Alpaca: %w", err)
 	}
-	// Como rawResponse es interface{}, necesitamos hacer un type assertion
+
+	// Paso 3: Verificar que el resultado sea una cadena
 	resString, ok := rawResponse.(string)
 	if !ok {
 		return "", fmt.Errorf("resultado inesperado de la acción de descarga: no es una cadena")
 	}
-	// Ahora puedes retornar la cadena de respuesta exitosa
+
+	// Paso 4: Retornar resultado exitoso
 	return resString, nil
 }
