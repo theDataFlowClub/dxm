@@ -15,7 +15,7 @@ type AppConfig struct {
 	DBPath          string // Si decides incluirlo
 }
 
-func loadConfigs() (AppConfig, error) { // Modificado para devolver AppConfig y un error
+func LoadConfigs() (AppConfig, error) { // Modificado para devolver AppConfig y un error
 	// Carga variables de entorno desde .env. Si no se encuentra, ignora el error
 	err := env.Load("/Users/davidochoacorrales/Documents/GitHub/dxm/configs/secret/.env") // Ruta relativa desde la raíz de ejecución
 	if err != nil {

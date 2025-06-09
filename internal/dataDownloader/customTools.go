@@ -65,7 +65,7 @@ type WebQueryAddress struct {
 // Ejemplo de URL generada:
 //
 //	https://example.com/api/data?key1=value1&key2=value2
-func webQuery(data WebQueryAddress) string {
+func WebQuery(data WebQueryAddress) string {
 	// Establecer "https" como protocolo por defecto si no se especifica
 	if data.protocol == "" {
 		data.protocol = "https"
@@ -100,7 +100,7 @@ unmarshalGeneric
 // unmarshalGeneric toma los datos JSON como []byte y un puntero a la estructura destino.
 // El destino (v) debe ser un puntero para que json.Unmarshal pueda modificarlo.
 // La función devuelve un error si algo sale mal.
-func unmarshalGeneric(data []byte, v interface{}) error {
+func UnmarshalGeneric(data []byte, v interface{}) error {
 	err := json.Unmarshal(data, v)
 	if err != nil {
 		return err
@@ -143,7 +143,7 @@ type ErrorHandlerFunc func(err error, message string)
 //	Intento 1: espera 100ms + jitter
 //	Intento 2: espera 200ms + jitter
 //	Intento 3: espera 400ms + jitter (hasta maxBackoff)
-func executeActionWithRetries(
+func ExecuteActionWithRetries(
 	action ActionFunc,
 	errorHandler ErrorHandlerFunc,
 	maxRetries int,

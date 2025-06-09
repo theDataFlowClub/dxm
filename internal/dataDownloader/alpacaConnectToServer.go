@@ -55,7 +55,7 @@ type alpacaCallItOptions struct {
 //
 // Nota: La autenticación se realiza añadiendo los encabezados "APCA-API-KEY-ID"
 // y "APCA-API-SECRET-KEY" con los valores obtenidos de la configuración de la aplicación.
-func callIt(url string) (string, error) {
+func CallIt(url string) (string, error) {
 
 	// Crea una nueva petición HTTP GET. El tercer argumento (nil) es para el cuerpo de la petición.
 	// El error devuelto por http.NewRequest se ignora aquí, asumiendo que la URL es válida.
@@ -63,7 +63,7 @@ func callIt(url string) (string, error) {
 
 	// Carga la configuración de la aplicación para obtener las claves de la API.
 	// Si hay un error al cargar la configuración, el programa termina aquí.
-	appConfig, err := loadConfigs()
+	appConfig, err := LoadConfigs()
 	if err != nil {
 		log.Fatalf("Error al cargar configuración: %v", err)
 	}
@@ -118,12 +118,12 @@ func callIt(url string) (string, error) {
 // Devuelve:
 //   - (string, nil) en caso de éxito
 //   - ("", error) si se agotan los reintentos o el resultado no es del tipo esperado
-func alpacaCallItWithRetries(opt alpacaCallItOptions) (string, error) {
+func AlpacaCallItWithRetries(opt alpacaCallItOptions) (string, error) {
 	// Paso 1: Ejecutar la llamada con reintentos
-	rawResponse, err := executeActionWithRetries(
+	rawResponse, err := ExecuteActionWithRetries(
 		func(attempt int) (interface{}, error) {
 			// Lógica real de la llamada
-			res, callErr := callIt(opt.url)
+			res, callErr := CallIt(opt.url)
 			return res, callErr
 		},
 		func(err error, msg string) {

@@ -89,7 +89,7 @@ var readConfig = DBOptions{
 //
 //	dbInstance, err := initDB(writeConfig) // Abrir para escritura
 //	dbInstance, err := initDB(readConfig)  // Abrir para solo lectura
-func initDB(cfg DBOptions) (*db.DB, error) {
+func InitDB(cfg DBOptions) (*db.DB, error) {
 	// Declara 'cfg' en el ámbito de la función initDB
 	//var cfg DBOptions
 	//
@@ -141,10 +141,10 @@ func initDB(cfg DBOptions) (*db.DB, error) {
 //   - Máximo de N reintentos.
 //   - Retraso inicial (backoff) de N milisegundos.
 //   - Retraso máximo (maxBackoff) de N segundos.
-func initDBWithRetries(cfg DBOptions) (*db.DB, error) {
-	rawResponse, err := executeActionWithRetries(
+func InitDBWithRetries(cfg DBOptions) (*db.DB, error) {
+	rawResponse, err := ExecuteActionWithRetries(
 		func(attempt int) (interface{}, error) {
-			dbInstance, dbErr := initDB(cfg)
+			dbInstance, dbErr := InitDB(cfg)
 			return dbInstance, dbErr
 		},
 		func(err error, msg string) {
@@ -246,7 +246,7 @@ type bkOptions struct {
 //	tradesBucket.Put([]byte("timestamp"), []byte("some trade details"))
 //
 // .
-func initBucket(opt bkOptions) (*db.Bucket, error) {
+func InitBucket(opt bkOptions) (*db.Bucket, error) {
 	var bucket *db.Bucket // Declara una variable para almacenar el bucket fuera del scope de la transacción
 
 	// db.Update ejecuta una transacción de lectura/escritura.
@@ -295,14 +295,14 @@ func initBucket(opt bkOptions) (*db.Bucket, error) {
 //   - Máximo de n reintentos.
 //   - Retraso inicial (backoff) de n milisegundos.
 //   - Retraso máximo (maxBackoff) de n segundos.
-func initBucketWithRetries(cfg bkOptions) (*db.Bucket, error) {
+func InitBucketWithRetries(cfg bkOptions) (*db.Bucket, error) {
 	// Llama a executeActionWithRetries para orquestar los reintentos.
 	// La función de acción anónima intenta inicializar el bucket usando initBucket.
-	rawResponse, err := executeActionWithRetries(
+	rawResponse, err := ExecuteActionWithRetries(
 		func(attempt int) (interface{}, error) {
 			// Intenta obtener o crear el bucket utilizando la instancia de DB y el nombre del bucket
 			// proporcionados en la configuración 'cfg'.
-			bkInstance, bkErr := initBucket(cfg)
+			bkInstance, bkErr := InitBucket(cfg)
 			return bkInstance, bkErr // Devuelve la instancia del bucket y el error
 		},
 		func(err error, msg string) {
