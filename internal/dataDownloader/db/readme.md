@@ -1,3 +1,0 @@
-# ```/db```
-
-db related files.

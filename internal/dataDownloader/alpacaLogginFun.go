@@ -5,28 +5,49 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
+
+	env "github.com/joho/godotenv"
 )
 
-/*
-//
-//
-//
+// Configs struct para agrupar las configuraciones
+type AppConfig struct {
+	AlpacaAPIKey    string
+	AlpacaSecretKey string
+	DBPath          string // Si decides incluirlo
+}
 
-BLOQUE DE alpacaCallItWithRetries
-// ===============================
+func loadConfigs() (AppConfig, error) { // Modificado para devolver AppConfig y un error
+	// Carga variables de entorno desde .env. Si no se encuentra, ignora el error
+	err := env.Load("/Users/davidochoacorrales/Documents/GitHub/dxm/internal/dataDownloader/configs/secret/.env") // Ruta relativa desde la raíz de ejecución
+	if err != nil {
+		log.Printf("Advertencia: No se pudo cargar .env, asumiendo variables de entorno configuradas: %v", err)
+	}
 
-//
-//
-//
-*/
+	config := AppConfig{
+		AlpacaAPIKey:    os.Getenv("API_KEY_ID"),
+		AlpacaSecretKey: os.Getenv("API_SECRET_KEY"),
+		//DBPath:          os.Getenv("DB_PATH"),
+	}
+
+	if config.AlpacaAPIKey == "" || config.AlpacaSecretKey == "" {
+		return AppConfig{}, fmt.Errorf("las claves api de alpaca no están configuradas en el entorno o en .env")
+	}
+
+	//fmt.Printf("API Key: %s...\n", config.AlpacaAPIKey[:5]) // Mostrar solo los primeros caracteres por seguridad
+	//fmt.Printf("DB Path: %s\n", config.DBPath)
+
+	return config, nil // Devolver la estructura de configuración y nil para el error
+}
+
 // alpacaCallItOptions contiene las opciones de configuración para una llamada con reintentos a la API de Alpaca.
-type AlpacaCallItOptions struct {
-	URL             string        // URL completa con parámetros para la petición
-	MAX_RETRIES     int           // Número máximo de reintentos permitidos
-	MAX_BACKOFF     time.Duration // Tiempo máximo de espera entre reintentos
-	INITIAL_BACKOFF time.Duration // Tiempo inicial de espera entre reintentos
-	LOG_TEXT        string        // Texto a usar para logging de esta acción
+type alpacaCallItOptions struct {
+	url            string        // URL completa con parámetros para la petición
+	MaxRetries     int           // Número máximo de reintentos permitidos
+	maxBackoff     time.Duration // Tiempo máximo de espera entre reintentos
+	initialBackoff time.Duration // Tiempo inicial de espera entre reintentos
+	logText        string        // Texto a usar para logging de esta acción
 }
 
 // callIt realiza una petición HTTP GET simple a la URL indicada, incluyendo
@@ -55,7 +76,7 @@ type AlpacaCallItOptions struct {
 //
 // Nota: La autenticación se realiza añadiendo los encabezados "APCA-API-KEY-ID"
 // y "APCA-API-SECRET-KEY" con los valores obtenidos de la configuración de la aplicación.
-func CallIt(url string) (string, error) {
+func callIt(url string) (string, error) {
 
 	// Crea una nueva petición HTTP GET. El tercer argumento (nil) es para el cuerpo de la petición.
 	// El error devuelto por http.NewRequest se ignora aquí, asumiendo que la URL es válida.
@@ -63,9 +84,10 @@ func CallIt(url string) (string, error) {
 
 	// Carga la configuración de la aplicación para obtener las claves de la API.
 	// Si hay un error al cargar la configuración, el programa termina aquí.
-	appConfig, err := LoadConfigs()
+	appConfig, err := loadConfigs()
 	if err != nil {
-		log.Fatalf("Error al cargar configuración: %v", err)
+		log.Printf("Error al cargar configuración: %v", err)
+		return "", err
 	}
 
 	// Agrega los encabezados HTTP necesarios para la autenticación y el formato de respuesta.
@@ -118,22 +140,22 @@ func CallIt(url string) (string, error) {
 // Devuelve:
 //   - (string, nil) en caso de éxito
 //   - ("", error) si se agotan los reintentos o el resultado no es del tipo esperado
-func AlpacaCallItWithRetries(opt AlpacaCallItOptions) (string, error) {
+func alpacaCallItWithRetries(opt alpacaCallItOptions) (string, error) {
 	// Paso 1: Ejecutar la llamada con reintentos
-	rawResponse, err := ExecuteActionWithRetries(
+	rawResponse, err := executeActionWithRetries(
 		func(attempt int) (interface{}, error) {
 			// Lógica real de la llamada
-			res, callErr := CallIt(opt.URL)
+			res, callErr := callIt(opt.url)
 			return res, callErr
 		},
 		func(err error, msg string) {
 			// Manejador de errores con logging
-			HandleErrorLogIt(err, msg)
+			handleErrorLogIt(err, msg)
 		},
-		opt.MAX_RETRIES,
-		opt.INITIAL_BACKOFF,
-		opt.MAX_BACKOFF,
-		opt.LOG_TEXT,
+		opt.MaxRetries,
+		opt.initialBackoff,
+		opt.maxBackoff,
+		opt.logText,
 	)
 
 	// Paso 2: Si todos los reintentos fallan, devolver error final
