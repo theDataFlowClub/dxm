@@ -55,7 +55,7 @@ type DBOptions struct {
 //   - Timeout: 500 * time.Millisecond - Tiempo máximo de espera para obtener un bloqueo
 //     exclusivo sobre el archivo de la base de datos.
 //   - ReadOnly: false - Indica que la base de datos se abrirá en modo de lectura y escritura.
-var writeConfig = DBOptions{
+var WriteConfig = DBOptions{
 	Path:     "db/ticks.db",
 	FileMode: 0600,
 	BoltOpts: &db.Options{
@@ -65,7 +65,7 @@ var writeConfig = DBOptions{
 }
 
 // Configuración para operaciones de lectura (solo lectura)
-var readConfig = DBOptions{
+var ReadConfig = DBOptions{
 	Path: "db/ticks.db",
 	// Los permisos de creación solo importan si el archivo no existe
 	FileMode: 0400, // Owner has read access only. Group and others have no access.
@@ -95,9 +95,9 @@ func InitDB(cfg DBOptions) (*db.DB, error) {
 	//
 	switch cfg.FileMode {
 	case 0600:
-		cfg = writeConfig
+		cfg = WriteConfig
 	case 0400:
-		cfg = readConfig
+		cfg = ReadConfig
 	default:
 		// Manejo de error si 'FileMode' no es ni 0600 ni 0400
 		return nil, fmt.Errorf("error de seguridad: %v. Modo no valido", cfg.FileMode)
@@ -148,7 +148,7 @@ func InitDBWithRetries(cfg DBOptions) (*db.DB, error) {
 			return dbInstance, dbErr
 		},
 		func(err error, msg string) {
-			handleErrorLogIt(err, msg)
+			HandleErrorLogIt(err, msg)
 		},
 		5,                    // Número máximo de reintentos
 		500*time.Millisecond, // Backoff inicial
@@ -186,7 +186,7 @@ BLOQUE DE initBucket
 */
 // alpacaCallItOptions contiene las opciones de configuración para un
 // quote optenido de alpaca
-type alpacaQuoteBuketSlots struct {
+type AlpacaQuoteBuketSlots struct {
 	ap string
 	as string
 	ax string
@@ -202,15 +202,15 @@ type alpacaQuoteBuketSlots struct {
 // identificar y operar sobre un bucket específico en una base de datos bbolt.
 // Se utiliza típicamente para pasar estos parámetros a funciones que interactúan
 // con buckets, como `initBucketWithRetries`.
-type bkOptions struct {
+type BkOptions struct {
 	// dbInstance es un puntero a la instancia de la base de datos bbolt
 	// a la que pertenece el bucket.
 	dbInstance *db.DB
 	// bucketName es el nombre del bucket dentro de la base de datos,
-	// representado como una cadena.
+	// representado como uSna cadena.
 	bucketName string
 	//
-	alpacaQuoteBuketSlots alpacaQuoteBuketSlots
+	alpacaQuoteBuketSlots AlpacaQuoteBuketSlots
 }
 
 // initBucket obtiene o crea un bucket dentro de una base de datos bbolt.
@@ -246,7 +246,7 @@ type bkOptions struct {
 //	tradesBucket.Put([]byte("timestamp"), []byte("some trade details"))
 //
 // .
-func InitBucket(opt bkOptions) (*db.Bucket, error) {
+func InitBucket(opt BkOptions) (*db.Bucket, error) {
 	var bucket *db.Bucket // Declara una variable para almacenar el bucket fuera del scope de la transacción
 
 	// db.Update ejecuta una transacción de lectura/escritura.
@@ -295,7 +295,7 @@ func InitBucket(opt bkOptions) (*db.Bucket, error) {
 //   - Máximo de n reintentos.
 //   - Retraso inicial (backoff) de n milisegundos.
 //   - Retraso máximo (maxBackoff) de n segundos.
-func InitBucketWithRetries(cfg bkOptions) (*db.Bucket, error) {
+func InitBucketWithRetries(cfg BkOptions) (*db.Bucket, error) {
 	// Llama a executeActionWithRetries para orquestar los reintentos.
 	// La función de acción anónima intenta inicializar el bucket usando initBucket.
 	rawResponse, err := ExecuteActionWithRetries(
@@ -308,7 +308,7 @@ func InitBucketWithRetries(cfg bkOptions) (*db.Bucket, error) {
 		func(err error, msg string) {
 			// La función de manejo de errores se llama si un intento falla.
 			// Proporciona detalles del error a handleErrorLogIt.
-			handleErrorLogIt(err, msg)
+			HandleErrorLogIt(err, msg)
 		},
 		5,                    // Número máximo de reintentos
 		500*time.Millisecond, // Backoff inicial

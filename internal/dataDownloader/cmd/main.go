@@ -23,8 +23,8 @@ func main() {
 
 	// 2. Call Alpaca API with retries
 	// Using config.cfgAlpacaConnect assuming it's in your config package
-	res, _ := dw.LlpacaCallItWithRetries(
-		dw.alpacaCallItOptions{
+	res, _ := dw.AlpacaCallItWithRetries(
+		dw.AlpacaCallItOptions{
 			url:            fAddress,              //	url string,
 			MaxRetries:     3,                     //	maxRetries int,
 			maxBackoff:     2 * time.Second,       //	maxBackoff time.Duration,
@@ -69,10 +69,10 @@ func main() {
 	// with a nil `dbInstance` at package-level. You need to create a new one, or
 	// modify the existing one.
 	bucket, err := dw.InitBucketWithRetries(
-		dw.bkOptions{
+		dw.BkOptions{
 			dbInstance: thisDB,
 			bucketName: dw.thisQuote.Symbol, // Se asume que 'thisQuote' es accesible y tiene un campo 'Symbol'
-			alpacaQuoteBuketSlots: dw.alpacaQuoteBuketSlots{
+			alpacaQuoteBuketSlots: dw.AlpacaQuoteBuketSlots{
 				ap: "",
 				as: "",
 				ax: "",

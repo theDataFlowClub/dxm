@@ -21,7 +21,7 @@ BLOQUE DE alpacaCallItWithRetries
 //
 */
 // alpacaCallItOptions contiene las opciones de configuración para una llamada con reintentos a la API de Alpaca.
-type alpacaCallItOptions struct {
+type AlpacaCallItOptions struct {
 	url            string        // URL completa con parámetros para la petición
 	MaxRetries     int           // Número máximo de reintentos permitidos
 	maxBackoff     time.Duration // Tiempo máximo de espera entre reintentos
@@ -118,7 +118,7 @@ func CallIt(url string) (string, error) {
 // Devuelve:
 //   - (string, nil) en caso de éxito
 //   - ("", error) si se agotan los reintentos o el resultado no es del tipo esperado
-func AlpacaCallItWithRetries(opt alpacaCallItOptions) (string, error) {
+func AlpacaCallItWithRetries(opt AlpacaCallItOptions) (string, error) {
 	// Paso 1: Ejecutar la llamada con reintentos
 	rawResponse, err := ExecuteActionWithRetries(
 		func(attempt int) (interface{}, error) {
@@ -128,7 +128,7 @@ func AlpacaCallItWithRetries(opt alpacaCallItOptions) (string, error) {
 		},
 		func(err error, msg string) {
 			// Manejador de errores con logging
-			handleErrorLogIt(err, msg)
+			HandleErrorLogIt(err, msg)
 		},
 		opt.MaxRetries,
 		opt.initialBackoff,

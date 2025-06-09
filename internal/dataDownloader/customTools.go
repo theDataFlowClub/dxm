@@ -12,7 +12,7 @@ import (
 
 var logBuffer bytes.Buffer // Un buffer en memoria para capturar los logs
 
-func logInit() {
+func LogInit() {
 	// 1. Configurar la salida de logs:
 	// Configuramos el logger estándar para escribir en el buffer.
 	// Esto NO IMPRIMIRÁ EN CONSOLA por defecto.
@@ -27,7 +27,7 @@ func logInit() {
 
 // manejo de error -- log
 
-func handleErrorLogIt(err error, message string) {
+func HandleErrorLogIt(err error, message string) {
 	// El log ya se almacena en logBuffer porque log.SetOutput(&logBuffer) en logInit()
 	// Si quieres acceder al contenido actual del buffer, puedes usar logBuffer.String()
 	// Aquí iría tu lógica de notificación/marcaje/reprocesamiento
