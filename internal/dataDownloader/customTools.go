@@ -1,4 +1,4 @@
-package dataDownloader
+package main
 
 import (
 	"bytes"

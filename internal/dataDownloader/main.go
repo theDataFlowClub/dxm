@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	dw "github.com/devicemxl/dxm/internal/dataDownloader"
 	db "go.etcd.io/bbolt"
 )
 
@@ -14,17 +13,17 @@ var symbol = "QQQ"
 var domain = "data.alpaca.markets"
 var path = "/v2/stocks/" + symbol + "/quotes"
 var query = "start=2016-01-01T00%3A00%3A00Z&limit=2&feed=sip&sort=asc"
-var fAddress = dw.webQuery(dw.WebQueryAddress{domain: domain, path: path, query: query})
+var fAddress = webQuery(WebQueryAddress{domain: domain, path: path, query: query})
 
 func main() {
 	// 1. Initialize log process early
-	dw.logInit()
+	logInit()
 	log.Println("Application started. Logs redirected to in-memory buffer.")
 
 	// 2. Call Alpaca API with retries
 	// Using config.cfgAlpacaConnect assuming it's in your config package
-	res, _ := dw.alpacaCallItWithRetries(
-		dw.alpacaCallItOptions{
+	res, _ := alpacaCallItWithRetries(
+		alpacaCallItOptions{
 			url:            fAddress,              //	url string,
 			MaxRetries:     3,                     //	maxRetries int,
 			maxBackoff:     2 * time.Second,       //	maxBackoff time.Duration,
@@ -34,8 +33,8 @@ func main() {
 
 	// 3. Decode the Alpaca response into thisQuote
 	// This populates thisQuote.Symbol, which is needed later
-	dw.unmarshalGeneric([]byte(res), &thisQuote)
-	log.Println("Alpaca data downloaded for symbol: %s", dw.thisQuote.Symbol)
+	unmarshalGeneric([]byte(res), &thisQuote)
+	log.Println("Alpaca data downloaded for symbol: %s", thisQuote.Symbol)
 
 	// 4. Initialize DB with retries
 	// Use config.writeConfig for DB options
@@ -43,7 +42,7 @@ func main() {
 	var dbInstance *db.DB // Declare a local variable for the DB instance
 
 	// Call initDBWithRetries and assign its result to dbInstance
-	dbInstance, err = dw.initDBWithRetries(writeConfig)
+	dbInstance, err = initDBWithRetries(writeConfig)
 	if err != nil {
 		log.Fatalf("Fatal: Failed to initialize database: %v", err)
 	}
@@ -68,11 +67,11 @@ func main() {
 	// You cannot use the global `config.thisTickerUpdater` directly if it was initialized
 	// with a nil `dbInstance` at package-level. You need to create a new one, or
 	// modify the existing one.
-	bucket, err := dw.initBucketWithRetries(
-		dw.bkOptions{
+	bucket, err := initBucketWithRetries(
+		bkOptions{
 			dbInstance: thisDB,
-			bucketName: dw.thisQuote.Symbol, // Se asume que 'thisQuote' es accesible y tiene un campo 'Symbol'
-			alpacaQuoteBuketSlots: dw.alpacaQuoteBuketSlots{
+			bucketName: thisQuote.Symbol, // Se asume que 'thisQuote' es accesible y tiene un campo 'Symbol'
+			alpacaQuoteBuketSlots: alpacaQuoteBuketSlots{
 				ap: "",
 				as: "",
 				ax: "",
@@ -87,9 +86,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Fatal: Failed to initialize symbol bucket: %v", err)
 	}
-	log.Printf("Bucket '%s' initialized successfully. Bucket pointer: %v", dw.thisQuote.Symbol, bucket)
+	log.Printf("Bucket '%s' initialized successfully. Bucket pointer: %v", thisQuote.Symbol, bucket)
 	//
-	for i, q := range dw.thisQuote.Quotes {
+	for i, q := range thisQuote.Quotes {
 		fmt.Printf("--- Quote %d ---\n", i+1)
 		fmt.Printf("  AP: %f, AS: %d, AX: %s\n", q.AP, q.AS, q.AX)
 		fmt.Printf("  BP: %f, BS: %d, BX: %s\n", q.BP, q.BS, q.BX)
